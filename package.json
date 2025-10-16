@@ -4,7 +4,7 @@
   "main": "lib/index.js",
   "description": "Lightweight update server for Electron apps",
   "scripts": {
-    "dev": "npx vercel dev",
+    "dev": "micro-dev ./lib/server.js -p 4000",
     "test": "xo && jest",
     "precommit": "lint-staged"
   },
@@ -32,6 +32,7 @@
   "dependencies": {
     "async-retry": "1.2.3",
     "date-fns": "1.29.0",
+    "dotenv": "^17.2.3",
     "express-useragent": "1.0.12",
     "fetch": "1.1.0",
     "finalhandler": "1.1.0",
@@ -49,6 +50,7 @@
     "eslint-config-prettier": "2.9.0",
     "husky": "0.14.3",
     "lint-staged": "7.0.0",
+    "micro-dev": "^3.1.0",
     "prettier": "1.10.2",
     "xo": "0.20.3"
   }
