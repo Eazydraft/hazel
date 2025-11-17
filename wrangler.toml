@@ -1,0 +1,19 @@
+name = "lucio-studio-update-server"
+main = "./workers/app.ts"
+compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2025-04-04"
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 0.5
+
+# Environment variables (set these in Cloudflare dashboard or use wrangler secret)
+# Required:
+# ACCOUNT - GitHub account name
+# REPOSITORY - GitHub repository name
+# Optional:
+# INTERVAL - Cache refresh interval in minutes (default: 15)
+# PRE - Set to "true" to use pre-release versions
+# TOKEN - GitHub personal access token for private repos
+# URL - Base URL for the service (auto-detected if not set)
+
