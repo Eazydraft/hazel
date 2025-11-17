@@ -8,6 +8,6 @@ enabled = true
 head_sampling_rate = 0.5
 
 [vars]
-ACCOUNT=Eazydraft
-REPOSITORY=clippy
-URL=https://updates.studio.lucioai.com
+ACCOUNT="Eazydraft"
+REPOSITORY="clippy"
+URL="https://updates.studio.lucioai.com"
