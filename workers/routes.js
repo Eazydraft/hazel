@@ -14,7 +14,7 @@ const prepareView = require('../lib/view');
 
 // Micro shim for Workers
 const send = (res, statusCode, data) => {
-  res.statusCode = statusCode;
+  res.writeHead(statusCode);
   res.end(data);
 };
 
@@ -26,20 +26,49 @@ module.exports = ({ cache, config }) => {
     token && typeof token === 'string' && token.length > 0;
 
   // Helpers
-  const proxyPrivateDownload = (asset, req, res) => {
-    const redirect = 'manual';
-    const headers = { Accept: 'application/octet-stream' };
-    const options = { headers, redirect };
+  const proxyPrivateDownload = async (asset, req, res) => {
     const { api_url: rawUrl } = asset;
-    const finalUrl = rawUrl.replace(
-      'https://api.github.com/',
-      `https://${token}@api.github.com/`
-    );
+    
+    // Use the same Bearer token approach as in cache.js
+    const headers = { 
+      'Accept': 'application/octet-stream',
+      'User-Agent': 'Hazel-Update-Server'
+    };
+    
+    if (token && typeof token === 'string' && token.length > 0) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    
+    const options = { headers, redirect: 'manual' };
 
-    fetch(finalUrl, options).then(assetRes => {
-      res.setHeader('Location', assetRes.headers.get('Location'));
+    const assetRes = await fetch(rawUrl, options);
+    
+    // Check if it's a redirect (302) or direct download (200)
+    if (assetRes.status === 302 || assetRes.status === 301) {
+      const location = assetRes.headers.get('Location');
+      
+      if (!location) {
+        console.error('No Location header in redirect response');
+        send(res, 500, 'Failed to get download URL');
+        return;
+      }
+      
+      res.setHeader('Location', location);
       send(res, 302);
-    });
+    } else if (assetRes.status === 200) {
+      // GitHub might return the file directly without redirect
+      console.log('Got direct download (200), need to proxy the content');
+      // For now, redirect to the public URL if available
+      if (asset.url) {
+        res.setHeader('Location', asset.url);
+        send(res, 302);
+      } else {
+        send(res, 500, 'Cannot proxy download');
+      }
+    } else {
+      console.error('Unexpected status code:', assetRes.status);
+      send(res, 500, 'Failed to get download from GitHub');
+    }
   };
 
   exports.download = async (req, res) => {
@@ -66,7 +95,7 @@ module.exports = ({ cache, config }) => {
     }
 
     if (shouldProxyPrivateDownload) {
-      proxyPrivateDownload(platforms[platform], req, res);
+      await proxyPrivateDownload(platforms[platform], req, res);
       return;
     }
 
@@ -108,7 +137,7 @@ module.exports = ({ cache, config }) => {
     }
 
     if (token && typeof token === 'string' && token.length > 0) {
-      proxyPrivateDownload(latest.platforms[platform], req, res);
+      await proxyPrivateDownload(latest.platforms[platform], req, res);
       return;
     }
 
@@ -164,13 +193,14 @@ module.exports = ({ cache, config }) => {
 
     if (compare(latest.version, version) !== 0) {
       const { notes, pub_date } = latest;
+      const sanitizedBaseUrl = url.startsWith('http') ? url : `https://${url}`
 
       send(res, 200, {
         name: latest.version,
         notes,
         pub_date,
         url: shouldProxyPrivateDownload
-          ? `${url}/download/${platformName}?update=true`
+          ? `${sanitizedBaseUrl}/download/${platformName}?update=true`
           : latest.platforms[platform].url
       });
 
@@ -182,25 +212,50 @@ module.exports = ({ cache, config }) => {
   };
 
   exports.releases = async (req, res) => {
+    const { filename } = req.params
+    
     // Get the latest version from the cache
-    const latest = await loadCache();
+    const latest = await loadCache()
 
-    if (!latest.files || !latest.files.RELEASES) {
-      res.statusCode = 204;
-      res.end();
-
-      return;
+    if (filename.toLowerCase().startsWith('releases')) {
+      if (!latest.files || !latest.files.RELEASES) {
+        res.statusCode = 204
+        res.end()
+        return
+      }
+      const content = latest.files.RELEASES
+  
+      res.writeHead(200, {
+        'content-length': Buffer.byteLength(content, 'utf8'),
+        'content-type': 'application/octet-stream'
+      })
+  
+      res.end(content)
     }
+    else if (filename.toLowerCase().endsWith('nupkg')) {
+      // Look up .nupkg file by its full filename (stored as key in platforms)
+      const nupkgAsset = latest.platforms?.['nupkg']
+      
+      if (!nupkgAsset) {
+        res.statusCode = 404
+        res.end()
+        return
+      }
 
-    const content = latest.files.RELEASES;
-
-    res.writeHead(200, {
-      'content-length': Buffer.byteLength(content, 'utf8'),
-      'content-type': 'application/octet-stream'
-    });
-
-    res.end(content);
-  };
+      if (shouldProxyPrivateDownload) {
+        console.log('Proxying private download...')
+        await proxyPrivateDownload(nupkgAsset, req, res)
+        return
+      }
+      res.writeHead(302, {
+        Location: nupkgAsset.url
+      })
+      res.end()
+    }else{
+      res.statusCode = 400
+      res.end()
+    }
+  }
 
   exports.overview = async (req, res) => {
     const latest = await loadCache();

@@ -118,7 +118,7 @@ export default {
 						await routes.downloadPlatform(req, res);
 					} else if (matchRoute('/update/:platform/:version') && request.method === 'GET') {
 						await routes.update(req, res);
-					} else if (matchRoute('/update/win32/:version/RELEASES') && request.method === 'GET') {
+					} else if (matchRoute('/update/win32/:version/:filename') && request.method === 'GET') {
 						await routes.releases(req, res);
 					} else {
 						// 404 Not Found
