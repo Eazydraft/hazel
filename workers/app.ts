@@ -120,6 +120,8 @@ export default {
 						await routes.update(req, res);
 					} else if (matchRoute('/update/win32/:version/:filename') && request.method === 'GET') {
 						await routes.releases(req, res);
+					} else if (matchRoute('/files/:filename') && request.method === 'GET') {
+						await routes.files(req, res);
 					} else {
 						// 404 Not Found
 						if (!resolved) {

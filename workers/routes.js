@@ -171,8 +171,9 @@ module.exports = ({ cache, config }) => {
       return;
     }
 
-    // Get the latest version from the cache
-    const latest = await loadCache();
+    // Get the latest version from the cache for the appropriate channel
+    // The loadCache will auto-detect the channel from the version
+    const latest = await loadCache(null, version);
 
     if (!latest.platforms || !latest.platforms[platform]) {
       res.statusCode = 204;
@@ -212,10 +213,11 @@ module.exports = ({ cache, config }) => {
   };
 
   exports.releases = async (req, res) => {
-    const { filename } = req.params
+    const { version, filename } = req.params
     
-    // Get the latest version from the cache
-    const latest = await loadCache()
+    // Get the latest version from the cache for the appropriate channel
+    // The loadCache will auto-detect the channel from the version
+    const latest = await loadCache(null, version)
 
     if (filename.toLowerCase().startsWith('releases')) {
       if (!latest.files || !latest.files.RELEASES) {
@@ -255,6 +257,67 @@ module.exports = ({ cache, config }) => {
       res.statusCode = 400
       res.end()
     }
+  }
+
+  exports.files = async (req, res) => {
+    const { filename } = req.params;
+    
+    // Detect channel from filename for electron-builder yml files
+    let channelFromFilename = null;
+    const lowerFilename = filename.toLowerCase();
+    if (lowerFilename === 'latest.yml' || lowerFilename === 'latest-mac.yml' || lowerFilename === 'latest-linux.yml') {
+      channelFromFilename = 'latest';
+    } else if (lowerFilename === 'beta.yml' || lowerFilename === 'beta-mac.yml' || lowerFilename === 'beta-linux.yml') {
+      channelFromFilename = 'beta';
+    } else if (lowerFilename === 'alpha.yml' || lowerFilename === 'alpha-mac.yml' || lowerFilename === 'alpha-linux.yml') {
+      channelFromFilename = 'alpha';
+    }
+    
+    // If requesting a specific channel yml file, load that channel's cache
+    if (channelFromFilename) {
+      const channelCache = await loadCache(channelFromFilename);
+      if (channelCache.files && channelCache.files[filename]) {
+        const fileFound = channelCache.files[filename];
+        if (shouldProxyPrivateDownload) {
+          proxyPrivateDownload(fileFound, req, res);
+          return;
+        }
+        res.writeHead(302, {
+          Location: fileFound.url
+        });
+        res.end();
+        return;
+      }
+      // If not found in files, continue to search
+    }
+    
+    // Try to find the file in any channel cache
+    // Start with latest, then beta, then alpha
+    const channels = ['latest', 'beta', 'alpha'];
+    let fileFound = null;
+    
+    for (const channel of channels) {
+      const channelCache = await loadCache(channel);
+      if (channelCache.files && channelCache.files[filename]) {
+        fileFound = channelCache.files[filename];
+        break;
+      }
+    }
+
+    if (!fileFound) {
+      send(res, 404, `can't load ${filename}`)
+      return
+    }
+
+    if (shouldProxyPrivateDownload) {
+      proxyPrivateDownload(fileFound, req, res);
+      return
+    }
+
+    res.writeHead(302, {
+      Location: fileFound.url
+    })
+    res.end()
   }
 
   exports.overview = async (req, res) => {
