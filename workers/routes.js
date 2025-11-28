@@ -267,10 +267,14 @@ module.exports = ({ cache, config }) => {
     const lowerFilename = filename.toLowerCase();
     if (lowerFilename === 'latest.yml' || lowerFilename === 'latest-mac.yml' || lowerFilename === 'latest-linux.yml') {
       channelFromFilename = 'latest';
-    } else if (lowerFilename === 'beta.yml' || lowerFilename === 'beta-mac.yml' || lowerFilename === 'beta-linux.yml') {
-      channelFromFilename = 'beta';
-    } else if (lowerFilename === 'alpha.yml' || lowerFilename === 'alpha-mac.yml' || lowerFilename === 'alpha-linux.yml') {
-      channelFromFilename = 'alpha';
+    } else if (lowerFilename === 'nightly.yml' || lowerFilename === 'nightly-mac.yml' || lowerFilename === 'nightly-linux.yml') {
+      channelFromFilename = 'nightly';
+    } else if (lowerFilename === 'edge.yml' || lowerFilename === 'edge-mac.yml' || lowerFilename === 'edge-linux.yml') {
+      channelFromFilename = 'edge';
+    } else if (lowerFilename === 'test.yml' || lowerFilename === 'test-mac.yml' || lowerFilename === 'test-linux.yml') {
+      channelFromFilename = 'test';
+    } else if (lowerFilename === 'cutting-edge.yml' || lowerFilename === 'cutting-edge-mac.yml' || lowerFilename === 'cutting-edge-linux.yml') {
+      channelFromFilename = 'cutting-edge';
     }
     
     // If requesting a specific channel yml file, load that channel's cache
@@ -292,8 +296,8 @@ module.exports = ({ cache, config }) => {
     }
     
     // Try to find the file in any channel cache
-    // Start with latest, then beta, then alpha
-    const channels = ['latest', 'beta', 'alpha'];
+    // Check all channels in order
+    const channels = ['cutting-edge', 'test', 'edge', 'nightly', 'latest'];
     let fileFound = null;
     
     for (const channel of channels) {
