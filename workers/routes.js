@@ -265,16 +265,12 @@ module.exports = ({ cache, config }) => {
     // Detect channel from filename for electron-builder yml files
     let channelFromFilename = null;
     const lowerFilename = filename.toLowerCase();
-    if (lowerFilename === 'latest.yml' || lowerFilename === 'latest-mac.yml' || lowerFilename === 'latest-linux.yml') {
-      channelFromFilename = 'latest';
-    } else if (lowerFilename === 'nightly.yml' || lowerFilename === 'nightly-mac.yml' || lowerFilename === 'nightly-linux.yml') {
-      channelFromFilename = 'nightly';
-    } else if (lowerFilename === 'edge.yml' || lowerFilename === 'edge-mac.yml' || lowerFilename === 'edge-linux.yml') {
-      channelFromFilename = 'edge';
+    if (lowerFilename === 'stable.yml' || lowerFilename === 'stable-mac.yml' || lowerFilename === 'stable-linux.yml' || lowerFilename === 'latest.yml' || lowerFilename === 'latest-mac.yml' || lowerFilename === 'latest-linux.yml') {
+      channelFromFilename = 'stable';
+    } else if (lowerFilename === 'beta.yml' || lowerFilename === 'beta-mac.yml' || lowerFilename === 'beta-linux.yml') {
+      channelFromFilename = 'beta';
     } else if (lowerFilename === 'test.yml' || lowerFilename === 'test-mac.yml' || lowerFilename === 'test-linux.yml') {
       channelFromFilename = 'test';
-    } else if (lowerFilename === 'cutting-edge.yml' || lowerFilename === 'cutting-edge-mac.yml' || lowerFilename === 'cutting-edge-linux.yml') {
-      channelFromFilename = 'cutting-edge';
     }
     
     // If requesting a specific channel yml file, load that channel's cache
@@ -297,7 +293,7 @@ module.exports = ({ cache, config }) => {
     
     // Try to find the file in any channel cache
     // Check all channels in order
-    const channels = ['cutting-edge', 'test', 'edge', 'nightly', 'latest'];
+    const channels = ['test', 'beta', 'stable'];
     let fileFound = null;
     
     for (const channel of channels) {
