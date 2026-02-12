@@ -111,6 +111,7 @@ module.exports = ({ cache, config }) => {
     const isUpdate = params && params.update;
 
     let { platform } = req.params;
+    console.log(`Downloading for platform: ${platform}`);
 
     if (platform === 'mac' && !isUpdate) {
       platform = 'dmg';
