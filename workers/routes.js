@@ -150,7 +150,7 @@ module.exports = ({ cache, config }) => {
   };
 
   exports.update = async (req, res) => {
-    const { platform: platformName, version } = req.params;
+    let { platform: platformName, version } = req.params;
 
     if (!valid(version)) {
       send(res, 500, {
@@ -161,7 +161,7 @@ module.exports = ({ cache, config }) => {
       return;
     }
 
-    const platform = checkAlias(platformName);
+    let platform = checkAlias(platformName);
 
     if (!platform) {
       send(res, 500, {
@@ -170,6 +170,13 @@ module.exports = ({ cache, config }) => {
       });
 
       return;
+    }
+
+    // TODO (randeep): remove after a month
+    // Windows: always serve the x64 version regardless of arch
+    if (platform.startsWith("exe")) {
+      platform = "exe";
+      platformName = "win32"
     }
 
     // Get the latest version from the cache for the appropriate channel
