@@ -1,0 +1,13 @@
+name = "lucio-studio-update-server"
+main = "./workers/app.ts"
+compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2025-04-04"
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 0.5
+
+[vars]
+ACCOUNT="Eazydraft"
+REPOSITORY="clippy"
+URL="https://updates.studio.lucioai.com"
